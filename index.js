@@ -21,7 +21,7 @@ const HttpInstance = axios.create({
 main();
 
 // 每五分钟更新一次
-schedule.scheduleJob('*/5 * * * *', function() {
+schedule.scheduleJob('*/15 * * * *', function() {
 	main();
 });
 
