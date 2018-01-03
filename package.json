@@ -1,0 +1,28 @@
+{
+  "name": "aliyun-ddns",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "./node_modules/.bin/pm2 start index.js --name=aliyun-ddns"
+  },
+  "author": "luoyefe",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.17.1",
+    "crypto": "^1.0.1",
+    "node-schedule": "^1.2.5",
+    "uuid": "^3.1.0"
+  },
+  "devDependencies": {
+    "pm2": "^2.9.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luoye-fe/aliyun-ddns.git"
+  },
+  "bugs": {
+    "url": "https://github.com/luoye-fe/aliyun-ddns/issues"
+  },
+  "homepage": "https://github.com/luoye-fe/aliyun-ddns#readme",
+  "description": "借助阿里云解析API实现DDNS"
+}
