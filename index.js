@@ -26,21 +26,29 @@ schedule.scheduleJob('*/15 * * * *', function() {
 });
 
 async function main() {
-	console.log((new Date()).toLocaleString(), '正在更新DNS记录 ...');
+	const now = new Date();
+    const localTime = now.getTime();
+    const localOffset = now.getTimezoneOffset() * 60000;
+    const utc = localTime + localOffset;
+    const offset = 8;
+    const calctime = utc + (3600000 * offset);
+    const calcDate = new Date(calctime);
+
+	console.log(calcDate.toLocaleString(), '正在更新DNS记录 ...');
 	const ip = await getExternalIP();
-	console.log((new Date()).toLocaleString(), '当前外网 ip:', ip);
+	console.log(calcDate.toLocaleString(), '当前外网 ip:', ip);
 	const records = await getDomainInfo();
 	if (!records.length) {
-		console.log((new Date()).toLocaleString(), '记录不存在，新增中 ...');
+		console.log(calcDate.toLocaleString(), '记录不存在，新增中 ...');
 		await addRecord(ip);
-		return console.log((new Date()).toLocaleString(), '成功, 当前 dns 指向: ', ip);
+		return console.log(calcDate.toLocaleString(), '成功, 当前 dns 指向: ', ip);
 	}
 	const recordID = records[0].RecordId;
 	const recordValue = records[0].Value;
-	if (recordValue === ip) return console.log((new Date()).toLocaleString(), '记录一致, 无修改');
+	if (recordValue === ip) return console.log(calcDate.toLocaleString(), '记录一致, 无修改');
 
 	await updateRecord(recordID, ip)
-	console.log((new Date()).toLocaleString(), '成功, 当前 dns 指向: ', ip);
+	console.log(calcDate.toLocaleString(), '成功, 当前 dns 指向: ', ip);
 }
 
 // 新增记录
