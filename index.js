@@ -20,8 +20,8 @@ const HttpInstance = axios.create({
 
 main();
 
-// 每十五分钟更新一次
-schedule.scheduleJob('*/15 * * * *', function() {
+// 每十分钟更新一次
+schedule.scheduleJob('*/10 * * * *', function() {
 	main();
 });
 
@@ -102,12 +102,9 @@ function updateRecord(id, ip) {
 }
 
 // 获取本机外网 ip 地址
+// 作者此前的接口已失效,更换了个国外的接口
 async function getExternalIP() {
-    const res = await axios.get('http://ifconfig.me/ip', {
-    	timeout: 10000,
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36'
-        }
+    const res = await axios.get('https://ipapi.co/ip/', {
     });
     return res.data.replace('\n', '');
 }
