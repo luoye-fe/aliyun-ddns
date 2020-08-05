@@ -103,7 +103,7 @@ function updateRecord(id, ip) {
 
 // 获取本机外网 ip 地址
 async function getExternalIP() {
-    const res = await axios.get('http://ifconfig.me/ip', {
+    const res = await axios.get('http://icanhazip.com/', {
     	timeout: 10000,
         headers: {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36'
