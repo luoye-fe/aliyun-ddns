@@ -1,6 +1,6 @@
 {
   "name": "aliyun-ddns",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "main": "index.js",
   "scripts": {
     "start": "./node_modules/.bin/pm2 start index.js --name=aliyun-ddns"
@@ -8,10 +8,9 @@
   "author": "luoyefe",
   "license": "MIT",
   "dependencies": {
+    "@alicloud/pop-core": "^1.7.9",
     "axios": "^0.17.1",
-    "crypto": "^1.0.1",
-    "node-schedule": "^1.2.5",
-    "uuid": "^3.1.0"
+    "node-schedule": "^1.2.5"
   },
   "devDependencies": {
     "pm2": "^2.9.1"
