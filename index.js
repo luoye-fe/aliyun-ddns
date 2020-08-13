@@ -72,13 +72,13 @@ async function main() {
       }
 
       return
-    } else {
-      // 记录值不存在
-      console.log(calcDate.toLocaleString(), '记录不存在，新增中 ...');
-		  await addRecord(ip);
-		  return console.log(calcDate.toLocaleString(), '成功, 当前 dns 指向: ', ip);
     }
   }
+
+  // 记录值不存在
+  console.log(calcDate.toLocaleString(), '记录不存在，新增中 ...');
+  await addRecord(ip);
+  return console.log(calcDate.toLocaleString(), '成功, 当前 dns 指向: ', ip);
 }
 
 // 新增记录
