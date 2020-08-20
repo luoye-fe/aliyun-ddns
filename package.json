@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "./node_modules/.bin/pm2 start index.js --name=aliyun-ddns"
+    "start": "node index.js"
   },
   "author": "luoyefe",
   "license": "MIT",
@@ -11,9 +11,6 @@
     "@alicloud/pop-core": "^1.7.9",
     "axios": "^0.17.1",
     "node-schedule": "^1.2.5"
-  },
-  "devDependencies": {
-    "pm2": "^2.9.1"
   },
   "repository": {
     "type": "git",

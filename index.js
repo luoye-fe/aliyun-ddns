@@ -7,7 +7,7 @@ const axios = require('axios');
 const schedule = require('node-schedule');
 const Core = require('@alicloud/pop-core');
 
-const { AccessKey, AccessKeySecret, Domain } = require('./config.json');
+const { AccessKey, AccessKeySecret, Domain } = require('/aliyun-ddns/config.json');
 
 const HttpInstance = new Core({
   accessKeyId: AccessKey,
