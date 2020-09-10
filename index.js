@@ -4,7 +4,6 @@
 
 const axios = require('axios');
 
-const schedule = require('node-schedule');
 const Core = require('@alicloud/pop-core');
 
 const { AccessKey, AccessKeySecret, Domain } = require('/aliyun-ddns/config.json');
@@ -17,11 +16,6 @@ const HttpInstance = new Core({
 });
 
 main();
-
-// 每十五分钟更新一次
-schedule.scheduleJob('*/15 * * * *', function() {
-	main();
-});
 
 // 主域名
 const mainDomain = Domain.split('.').slice(-2).join('.')
