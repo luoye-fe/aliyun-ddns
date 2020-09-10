@@ -1,12 +1,29 @@
 /*
  * 借助阿里云 DNS 服务实现 DDNS（动态域名解析）
  */
-
-const axios = require('axios');
-
+const publicIp = require('public-ip');
 const Core = require('@alicloud/pop-core');
+const isDocker = require('is-docker');
 
-const { AccessKey, AccessKeySecret, Domain } = require('/aliyun-ddns/config.json');
+let AccessKey = null;
+let AccessKeySecret = null;
+let Domain = null;
+
+if (isDocker()) {
+  AccessKey = process.env.AccessKey
+  AccessKeySecret = process.env.AccessKeySecret
+  Domain = process.env.Domain && process.env.Domain.split(',')
+} else {
+  const config = require('./config.json');
+  AccessKey = config.AccessKey
+  AccessKeySecret = config.AccessKeySecret
+  Domain = config.Domain
+}
+
+if (!AccessKey || !AccessKeySecret || !Domain) {
+  console.log('配置错误')
+  return process.exit(0)
+}
 
 const HttpInstance = new Core({
   accessKeyId: AccessKey,
@@ -15,16 +32,139 @@ const HttpInstance = new Core({
   apiVersion: '2015-01-09'
 });
 
-main();
+async function handleOneDomain(domain, externalIp) {
+  const { subDomain, mainDomain } = parseDomain(domain)
+  const domainRecords = await getDomainRecords(subDomain, mainDomain)
 
-// 主域名
-const mainDomain = Domain.split('.').slice(-2).join('.')
+  // 无记录 直接添加
+  if (!domainRecords.length) {
+    console.log(getTime(), domain, '记录不存在，新增中 ...');
+    await addRecord(subDomain, mainDomain, externalIp);
+    console.log(getTime(), domain, '新增成功, 当前 dns 指向: ', externalIp);
+    return null
+  }
 
-// 子域名
-const subDomain = Domain.split('.').slice(0, Domain.split('.').length - 2).join('.')
+  // 匹配已有记录是否存在
+  for (let i = 0; i < domainRecords.length; i++) {
+    const item = domainRecords[i]
 
-async function main() {
-	const now = new Date();
+    if (item.RR === subDomain) {
+      // 记录值存在
+      const recordID = item.RecordId;
+      const recordValue = item.Value;
+      if (recordValue === externalIp) {
+        // 记录值一致
+        console.log(getTime(), domain, '记录一致, 无修改');
+      } else {
+        // 记录值不一致
+        await updateRecord(recordID, subDomain, externalIp)
+        console.log(getTime(), domain, '更新成功, 当前 dns 指向: ', externalIp);
+      }
+
+      return null
+    }
+  }
+
+  // 记录值不存在
+  console.log(getTime(), domain, '记录不存在，新增中 ...');
+  await addRecord(subDomain, mainDomain, externalIp);
+  console.log(getTime(), domain, '新增成功, 当前 dns 指向: ', externalIp);
+  return null
+}
+
+// 新增记录
+function addRecord(subDomain, mainDomain, ip) {
+  return new Promise((resolve, reject) => {
+    HttpInstance.request('AddDomainRecord', {
+      DomainName: mainDomain,
+      RR: subDomain,
+      Type: 'A',
+      Value: ip
+    }, {
+      method: 'POST'
+    })
+      .then(res => {
+        resolve(res);
+      })
+      .catch(e => {
+        reject(e);
+      })
+  });
+}
+
+// 更新记录
+function updateRecord(id, subDomain, ip) {
+  return new Promise((resolve, reject) => {
+    HttpInstance.request('UpdateDomainRecord', {
+      RecordId: id,
+      RR: subDomain,
+      Type: 'A',
+      Value: ip
+    }, {
+      method: 'POST'
+    })
+      .then(res => {
+        resolve(res);
+      })
+      .catch(e => {
+        reject(e);
+      })
+  });
+}
+
+// 格式化域名，获取子域名与主域名
+function parseDomain(domain) {
+  return {
+    subDomain: domain.split('.').slice(0, domain.split('.').length - 2).join('.'),
+    mainDomain: domain.split('.').slice(-2).join('.'),
+  }
+}
+
+// 获取域名解析记录
+function getDomainRecords(subDomain, mainDomain) {
+  return new Promise((resolve, reject) => {
+    HttpInstance.request('DescribeDomainRecords', {
+      DomainName: mainDomain,
+      PageSize: 100,
+      KeyWord: subDomain,
+    }, {
+      method: 'POST'
+    })
+      .then(res => {
+        resolve(res.DomainRecords.Record);
+      })
+      .catch(e => {
+        reject(e);
+      })
+  });
+}
+
+// 获取本机公网 IP
+function getExternalIp() {
+  return new Promise((resolve, reject) => {
+    Promise.race([publicIp.v4({
+      onlyHttps: true,
+      timeout: 5000,
+    }), publicIp.v6({
+      onlyHttps: true,
+      timeout: 5000,
+    })])
+      .then((v4, v6) => {        
+        if (v4) return resolve(v4)
+        if (v6) return resolve(v6)
+
+        reject(new Error('无法获取公网 '))
+      })
+      .catch(e => {
+        console.log(e)
+        reject(e)
+      })
+  })
+}
+
+// 时间
+function getTime() {
+  const now = new Date();
   const localTime = now.getTime();
   const localOffset = now.getTimezoneOffset() * 60000;
   const utc = localTime + localOffset;
@@ -32,114 +172,18 @@ async function main() {
   const calctime = utc + (3600000 * offset);
   const calcDate = new Date(calctime);
 
-  console.log(calcDate.toLocaleString(), '正在更新DNS记录 ...');
+  return calcDate.toLocaleString()
+}
 
-  // 获取当前外网 IP 地址
-	const ip = await getExternalIP();
-  console.log(calcDate.toLocaleString(), '当前外网 ip:', ip);
-  
-  // 获取目标域名的所有记录值
-  const records = await getDomainInfo();
-  
-  // 无记录 直接添加
-	if (!records.length) {
-		console.log(calcDate.toLocaleString(), '记录不存在，新增中 ...');
-		await addRecord(ip);
-		return console.log(calcDate.toLocaleString(), '成功, 当前 dns 指向: ', ip);
+async function MAIN() {
+  const resultDomain = typeof Domain === 'string' ? [Domain] : Domain
+  const externalIp = await getExternalIp()
+
+  console.log(getTime(), '当前公网 ip:', externalIp);
+
+  for (let i = 0; i < resultDomain.length; i++) {
+    await handleOneDomain(resultDomain[i], externalIp)
   }
-  
-  // 匹配已有记录是否存在
-  for(let i = 0; i < records.length; i++) {
-    const item = records[i]
-
-    if (item.RR === subDomain) {
-      // 记录值存在
-      const recordID = item.RecordId;
-	    const recordValue = item.Value;
-	    if (recordValue === ip) {
-        // 记录值一致
-        console.log(calcDate.toLocaleString(), '记录一致, 无修改');
-      } else {
-        // 记录值不一致
-        await updateRecord(recordID, ip)
-	      console.log(calcDate.toLocaleString(), '成功, 当前 dns 指向: ', ip);
-      }
-
-      return
-    }
-  }
-
-  // 记录值不存在
-  console.log(calcDate.toLocaleString(), '记录不存在，新增中 ...');
-  await addRecord(ip);
-  return console.log(calcDate.toLocaleString(), '成功, 当前 dns 指向: ', ip);
 }
 
-// 新增记录
-function addRecord(ip) {
-	return new Promise((resolve, reject) => {
-    HttpInstance.request('AddDomainRecord', {
-      DomainName: mainDomain,
-			RR: subDomain,
-			Type: 'A',
-			Value: ip
-    }, {
-      method: 'POST'
-    })
-		.then(res => {
-			resolve(res);
-		})
-		.catch(e => {
-			reject(e);
-		})
-	});
-}
-
-// 更新记录
-function updateRecord(id, ip) {
-	return new Promise((resolve, reject) => {
-    HttpInstance.request('UpdateDomainRecord', {
-      RecordId: id,
-			RR: subDomain,
-			Type: 'A',
-			Value: ip
-    }, {
-      method: 'POST'
-    })
-		.then(res => {
-			resolve(res);
-		})
-		.catch(e => {
-			reject(e);
-		})
-	});
-}
-
-// 获取本机外网 ip 地址
-async function getExternalIP() {
-    const res = await axios.get('http://icanhazip.com/', {
-    	timeout: 10000,
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36'
-        }
-    });
-    return res.data.replace('\n', '');
-}
-
-// 获取当前解析记录
-function getDomainInfo() {
-	return new Promise((resolve, reject) => {
-    HttpInstance.request('DescribeDomainRecords', {
-			DomainName: mainDomain, // 获取 主域名 的记录信息
-			PageSize: 100
-    }, {
-      method: 'POST'
-    })
-		.then(res => {
-			resolve(res.DomainRecords.Record);
-		})
-		.catch(e => {
-			reject(e);
-		})
-	});
-}
+MAIN()

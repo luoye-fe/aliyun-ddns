@@ -1,10 +1,8 @@
 FROM node:10.22.0-alpine3.9
 
-WORKDIR /aliyun-ddns
+WORKDIR /home/mapp
 
-COPY . /aliyun-ddns
-
-RUN mv /aliyun-ddns/config.json.sample /aliyun-ddns/config.json
+COPY . /home/mapp
 
 RUN npm install --registry=https://registry.npm.taobao.org
 
