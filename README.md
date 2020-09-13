@@ -11,7 +11,7 @@ ALIYUN-DDNS
 
 ## 功能
 
-* 自动监听本地公网 IP 变化，毫秒级更新 DNS 解析记录
+* 自动监听本地公网 IP 变化，秒级更新 DNS 解析记录
 
 * 支持多个域名解析
 
@@ -82,5 +82,6 @@ docker run -d \
   -e AccessKey=Your_AccessKey \
   -e AccessKeySecret=Your_AccessKeySecret \
   -e Domain="sub.example.com,*.home.example.com" \ # 多个域名用英文逗号连接
+  --network=host
   luoyefe/aliyun-ddns
 ```

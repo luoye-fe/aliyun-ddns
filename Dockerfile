@@ -6,4 +6,4 @@ COPY . /home/mapp
 
 RUN npm install --registry=https://registry.npm.taobao.org
 
-CMD node ./index.js
+CMD npm run start

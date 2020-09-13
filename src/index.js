@@ -4,6 +4,7 @@
 const publicIp = require('public-ip');
 const Core = require('@alicloud/pop-core');
 const isDocker = require('is-docker');
+const network = require('./net')
 
 let AccessKey = null;
 let AccessKeySecret = null;
@@ -14,7 +15,7 @@ if (isDocker()) {
   AccessKeySecret = process.env.AccessKeySecret
   Domain = process.env.Domain && process.env.Domain.split(',')
 } else {
-  const config = require('./config.json');
+  const config = require('../config.json');
   AccessKey = config.AccessKey
   AccessKeySecret = config.AccessKeySecret
   Domain = config.Domain
@@ -186,4 +187,8 @@ async function MAIN() {
   }
 }
 
-MAIN()
+network.on('online', function () {
+  MAIN()
+}).on('offline', function () {
+  console.log('检测到断网，网络在线后将进行下一次记录更新');
+});
