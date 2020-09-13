@@ -9,7 +9,7 @@
   "license": "MIT",
   "dependencies": {
     "@alicloud/pop-core": "^1.7.9",
-    "axios": "^0.17.1",
+    "axios": "^0.20.0",
     "is-docker": "^2.1.1",
     "public-ip": "^4.0.2"
   },
