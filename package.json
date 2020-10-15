@@ -11,6 +11,7 @@
     "@alicloud/pop-core": "^1.7.9",
     "axios": "^0.17.1",
     "is-docker": "^2.1.1",
+    "ping": "^0.3.0",
     "public-ip": "^4.0.2"
   },
   "repository": {
