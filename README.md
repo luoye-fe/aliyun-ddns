@@ -1,7 +1,7 @@
 ALIYUN-DDNS
 ===============
 
-借助阿里云解析的 API 实现 DDNS
+借助阿里云 DNS 解析的 API 实现 DDNS
 
 ## 说明
 
